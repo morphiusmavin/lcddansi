@@ -1,0 +1,60 @@
+
+ANSI sequence decoding. 
+----------------------
+
+Only a subset of the ANSI sequences are decoded here.
+If it's not here then send JJ a patch or a request for that ANSI/VT
+sequence to implemented. 
+
+Reset Device            ESC 'c'
+
+All rest assume leading ESC char. :
+
+Enable Line Wrap	[7h            [?7h
+Disable Line Wrap	[7l            [?7l
+
+Font Set G0		(
+Font Set G1		)
+
+Scroll Down		D
+Scroll Up		M
+
+Erase to end of screen  [0J  or [J
+Erase cursor to start   [1J
+Erase Screen	        [2J
+
+Erase to End of Line	[0K  or [K
+Erase cursor to start   [1K
+Erase Line              [2K
+
+Save cursor postion     [s
+Restore cursor position [u
+
+Variable length commands
+
+Cursor Position Set	[row;colH
+Cursor Up		[nA
+Cursor Down		[nB
+Cursor Right		[nC
+Cursor Left		[nD
+
+
+Non-standard codes for entry mode
+
+Left Reverse		[4E
+Right Reverse		[5E
+Right Normal		[6E
+Left Normal		[7E
+ 
+Non-standard codes for cursor control
+
+underline cursor	[X
+block cursor		[Y
+hide cursor		[Z
+
+Non-standard code for setting character and line delay
+
+Set char and line delays  [{cd};{ld}w
+
+
+Jim Jackson <jj@franjam.org.uk>
