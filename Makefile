@@ -1,73 +1,117 @@
-#
-# Make file for lcdd
-# daemon that reads named pipe (fifo) and sends anything read from 
-#  that to a parallel connected HD44 compatible char. LCD
-# Software specific to TS-72x0 ARM SBC
-# 
-# Makefile for arm-linux cross compilation on i386 debian box,
-# using the arm crosstool kit provided by Technologic Systems
-# for the TS-72x0 ARM SBC
+######################################################################################
+# GNU GCC ARM Embeded Toolchain base directories and binaries 
+######################################################################################
+#GCC_BASE = /home/dan/dev/arm/opt/crosstool/gcc-3.4.4-glibc-2.3.2/arm-linux/
+#GCC_BASE = /home/dan/dev/arm/crosstool/gcc3/arm-linux/
+#GCC_BASE = /home/dan/dev/ts-7200/gcc-3.4.4-glibc-2.3.2/arm-linux/
+GCC_BASE = $(CROSS_COMPILE)
+#GCC_BASE = /home/dan/dev/arm/crosstool/gcc3/arm-linux/
+GCC_BIN  = $(GCC_BASE)bin/
+GCC_LIB  = $(GCC_BASE)arm-linux/lib/
+GCC_INC  = $(GCC_BASE)arm-linux/include/
+AS       = $(GCC_BIN)arm-linux-as
+CC       = $(GCC_BIN)arm-linux-gcc
+CPP      = $(GCC_BIN)arm-linux-g++
+LD       = $(GCC_BIN)arm-linux-gcc
+OBJCOPY  = $(GCC_BIN)arm-linux-objcopy
 
-SHELL		= /bin/sh
+#TS-7200_CC_FLAGS = -mcpu=arm920t -march=armv5t
+#TS-7200_CC_FLAGS = -mcpu=arm920t -mapcs-32 -mthumb-interwork
+#TS-7200_CC_FLAGS = -mcpu=arm920t
+TS-7200_CC_FLAGS = -mcpu=arm920t -mapcs-32 -mthumb-interwork
+ASM_FLAGS = -almns=listing.txt
+PROJECT_INC_LIB = -I$(PORT) -I$(SOURCE)
 
-DEMOS		= 
-PROGS		= lcdd
+# to debug use: make print-<variable_name>
+# e.g. make print-GCC_BASE
+print-%:
+	@echo '$*=$($*)'
+#	@echo $(.SOURCE)
+#	@echo $(.TARGET)
 
-srcdir		= .
+######################################################################################
+# Main makefile project configuration
+#    PROJECT      = <name of the target to be built>
+#    MCU_CC_FLAGS = <one of the CC_FLAGS above>
+#    MCU_LIB_PATH = <one of the LIB_PATH above>
+#    OPTIMIZE_FOR = < SIZE or nothing >
+#    DEBUG_LEVEL  = < -g compiler option or nothing >
+#    OPTIM_LEVEL  = < -O compiler option or nothing >
+######################################################################################
+PROJECT           = main
+MCU_CC_FLAGS      = $(TS-7200_CC_FLAGS)
+MCU_LIB_PATH      = $(TS-7200_LIB_PATH)
+OPTIMIZE_FOR      = 
+DEBUG_LEVEL       = 
+OPTIM_LEVEL       = 
+PROJECT_OBJECTS   = main.o
+PROJECT_LIB_PATHS = -L.
+PROJECT_LIBRARIES =
+PROJECT_SYMBOLS   = -DTOOLCHAIN_GCC_ARM -DNO_RELOC='0'  
 
-# **** CUSTOMISE THESE ******
+######################################################################################
+# Main makefile system configuration
+######################################################################################
+SYS_OBJECTS = 
+SYS_LIB_PATHS = -L$(MCU_LIB_PATH)
+ifeq (OPTIMIZE_FOR, SIZE)
+SYS_LIBRARIES = -lstdc++_s -lsupc++_s -lm -lc_s -lg_s -lnosys
+SYS_LD_FLAGS  = --specs=nano.specs -u _printf_float -u _scanf_float
+else 
+SYS_LIBRARIES = -lstdc++ -lsupc++ -lm -lc -lg -lnosys
+SYS_LD_FLAGS  = 
+endif
 
-includedir	= $(HOME)/include
-INSDIR		= $(HOME)/export/work/bin
-#MANDIR		= /usr/local/man/man1
-#LOCALINS	= $(HOME)/bin
-#LOCALMAN	= $(HOME)/man/man1
+############################################################################### 
+# Command line building
+###############################################################################
+ifdef DEBUG_LEVEL
+CC_DEBUG_FLAGS = -g$(DEBUG_LEVEL)
+CC_SYMBOLS = -DDEBUG $(PROJECT_SYMBOLS)
+else
+CC_DEBUG_FLAGS =
+CC_SYMBOLS = -DNODEBUG $(PROJECT_SYMBOLS)
+endif 
 
-lcdd		= lcdd.o lcd_func_ansi.o ts7200io.o
+ifdef OPTIM_LEVEL
+CC_OPTIM_FLAGS = -O$(OPTIM_LEVEL)
+else 
+CC_OPTIM_FLAGS = 
+endif
 
-# ***************************
-#CC		= arm-linux-gcc
-#CC		= gcc
-#CFLAGS		= -O -msoft-float
-CFLAGS		= -O2
-CPPFLAGS	= -I. -I$(includedir)
+INCLUDE_PATHS = -I.$(GCC_INC)
+LIBRARY_PATHS = $(PROJECT_LIB_LIB) $(SYS_LIB_PATHS)
+CC_FLAGS = $(MCU_CC_FLAGS) $(CC_OPTIM_FLAGS) $(CC_DEBUG_FLAGS) -Wall -fno-exceptions -ffunction-sections -fdata-sections 
+#-pthread -static-libgcc
+# use -static-libgcc instead of -static to get rid of warning: "Using getprotobyname in statically linked apps requires
+# at runtime the shared libraries from the glibc version used for linking"
+LD_FLAGS = $(MCU_CC_FLAGS) -Wl,--gc-sections $(SYS_LD_FLAGS) -Wl,-Map=$(PROJECT).map 
+LD_SYS_LIBS = $(SYS_LIBRARIES)
 
-CCFLAGS		= $(CFLAGS) $(CPPFLAGS)
+#GNUCFLAGS = -g -ansi -Wstrict-prototypes	doesn't compile "// ..comments.."
+#CC_FLAGS = -static -g -Wstrict-prototypes -mcpu=arm920t -mapcs-32 -mthumb-interwork -DMAKE_TARGET
+CC_FLAGS = -g -Wstrict-prototypes -mcpu=arm920t -DMAKE_TARGET
+GNULDFLAGS_T = ${GNULDFLAGS} -pthread
+#CC_FLAGST = ${CC_FLAGS} + GNULDFLAGS_T
+GNUSFLAGS = -D_SVID_SOURCE -D_XOPEN_SOURCE
+GNUNOANSI = -g -gnu99 -Wstrict-prototypes
 
-LINK		= $(CC)
+#####################################################
+#CFLAGS = ${GNUCFLAGS}
+#LDFLAGS = ${GNULDFLAGS}
 
-#
-# libraries
+BULD_TARGET = $(PROJECT)
 
-#LDFLAGS	= 
-#LDFLAGS	= 
-#LDFLAGS	= -static
+all : lcd_msg
 
-# if there is an include file uncomment this. Add anyother dependancies
-#adio.o: adio.h
+lcdmesg.o: lcdmesg.c
+	${CC} ${CC_FLAGS} -DTEST_SEQUENCE ${INCLUDE_PATHS} -c lcdmesg.c
 
-.c.o:
-	$(CC) -c $(CCFLAGS) $<
+lcd_msg: lcdmesg.o
+	${CC} lcdmesg.o -o lcd_msg
 
-all:	$(PROGS)
-
-clean:
-	rm -f *~ *.o $(PROGS)
-
-backup:	dist
-
-dist:	lcdd
-	rm -f *~ *.o
-	(d=`basename $$PWD` ; cd .. ; tar cfz $$d.tgz $$d)
-
-lcdd:	$(lcdd)
-	$(CC) $(lcdd) $(LDFLAGS) -o $@
-
-ts7200io.o:	ts7200io.c ts7200io.h
-
-install:	$(PROGS)
-	@for f in $(PROGS) $(DEMOS) ; do \
-	 echo "Copying $$f to $(INSDIR)" ;\
-	 install -D --backup $$f $(INSDIR)/$$f; done
+clean :
+	rm -f *.o *~ *# core lcd_msg
+	
 
 

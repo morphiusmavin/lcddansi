@@ -66,7 +66,8 @@ iofd,A))
 
 #define nop() __asm__ __volatile__("mov\tr0,r0\t@ nop\n\t");
 
-#define COUNTDOWN(x)    asm volatile ( \
+#define COUNTDOWN(x) usleep(x)
+#define COUNTDOWN2(x)    asm volatile ( \
 "1:\n"\
 "subs %1, %1, #1;\n"\
 "bne 1b;\n"\
@@ -580,6 +581,7 @@ int ifwidth,lines;
 	if (!(ifwidth==4 || ifwidth==8)) { return(EINVAL); }
 
 	st=gpio_init();
+
 	if (st==0)
 	{
 		lcd_lines=lines;
@@ -597,16 +599,23 @@ int ifwidth,lines;
 */
 
 		lcd_ifwidth=8;
+		printf("cmd: %d\n",cmd);
 		lcd_cmd(cmd);							  /* initialise width of interface, font, and lines */
+		printf("hello?\n");
 		/* usleep(10000); */ waitalarm();
 		lcd_ifwidth=ifwidth;
 		lcd_cmd(cmd);							  /* initialise width of interface, font, and lines */
+		printf("hello?\n");
 		/* usleep(10000); */ waitalarm();
 		lcd_cmd(0x0C);							  /* set display on, cursor off, blinking off */
+		printf("hello?\n");
 		/* usleep(10000); */ waitalarm();
 		lcd_cmd(0x01);							  /* clear display */
+		printf("hello?\n");
 		/* usleep(10000); */ waitalarm();
 		lcd_cmd(0x06);							  /* increment mode, entire shift off */
+		printf("hello?\n");
+
 	}
 	return(st);
 }
@@ -621,6 +630,7 @@ unsigned char c;
 	int i;
 
 	lcd_wait();									  /* wait till LCD is NOT busy */
+	printf("done\n");
 	if (lcd_ifwidth==4) { lcd_cmd4(c); return ; }
 	*lcd_io_ddr=0xFF;							  /* set data to outputs */
 	*lcd_io_byte=c;								  /* set data lines to value */
@@ -732,13 +742,16 @@ lcd_wait()
 	{
 		*porth_byte &= ~0x18;					  /* clear EN and RS to 0 */
 		*porth_byte |= 0x20;					  /* set W/R to 1 */
+
 		i=LCD_SETUP; COUNTDOWN(i);
 		*porth_byte |= 0x08;					  /* set EN */
 		i=LCD_PULSE; COUNTDOWN(i);
 		c=*lcd_io_byte;							  /* read value from LCD */
 		*porth_byte &= ~0x08;					  /* unset EN */
 		i=LCD_HOLD; COUNTDOWN(i);
+		printf("%2x \n",(c&0x80));
 	}
+
 	return((c&0x80)==0x80);
 }
 

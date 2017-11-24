@@ -1,14 +1,17 @@
-#include<unistd.h>
-#include<sys/types.h>
-#include<sys/mman.h>
-#include<stdio.h>
-#include<fcntl.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <string.h>
+#include "mytypes.h"
 
 #define GPIOBASE    0x80840000
-#define PADR    0
-#define PADDR   (0x10 / sizeof(unsigned int))
-#define PHDR    (0x40 / sizeof(unsigned int))
-#define PHDDR   (0x44 / sizeof(unsigned int))
+#define PADR    0							// address offset of LCD
+#define PADDR   (0x10 / sizeof(UINT))		// address offset of DDR LCD
+#define PHDR    (0x40 / sizeof(UINT))		// bits 3-5: EN, RS, WR
+#define PHDDR   (0x44 / sizeof(UINT))		// DDR for above
 
 // These delay values are calibrated for the EP9301
 // CPU running at 166 Mhz, but should work also at 200 Mhz
@@ -23,15 +26,15 @@
 : "=r" ((x)) : "r" ((x)) \
 );
 
-volatile unsigned int *gpio;
-volatile unsigned int *phdr;
-volatile unsigned int *phddr;
-volatile unsigned int *padr;
-volatile unsigned int *paddr;
+volatile UINT *gpio;
+volatile UINT *phdr;
+volatile UINT *phddr;
+volatile UINT *padr;
+volatile UINT *paddr;
 
-void command(unsigned int);
-void writechars(unsigned char *);
-unsigned int lcdwait(void);
+void command(UINT);
+void writechars(UCHAR *);
+UINT lcdwait(void);
 void lcdinit(void);
 
 /* This program takes lines from stdin and prints them to the
@@ -46,22 +49,29 @@ int main(int argc, char **argv)
 {
 	int i = 0;
 
+	printf("argc: %d\n",argc);
+
 	lcdinit();
+
+	if(argc > 3)
+		return 0;
+	
 	if (argv[1])
 	{
-		writechars(argv[1]);
+		writechars((UCHAR*)argv[1]);
 	}
+
 	if (argv[2])
 	{
 		lcdwait();
 		command(0xa8);							  // set DDRAM addr to second row
-		writechars(argv[2]);
+		writechars((UCHAR*)argv[2]);
 	}
 	if (argc > 0) return 0;
 
 	while(!feof(stdin))
 	{
-		unsigned char buf[512];
+		char buf[512];
 
 		lcdwait();
 		if (i)
@@ -77,11 +87,11 @@ int main(int argc, char **argv)
 		i = i ^ 0x1;
 		if (fgets(buf, sizeof(buf), stdin) != NULL)
 		{
-			unsigned int len;
+			UINT len;
 			buf[0x27] = 0;
 			len = strlen(buf);
 			if (buf[len - 1] == '\n') buf[len - 1] = 0;
-			writechars(buf);
+			writechars((UCHAR*)buf);
 		}
 	}
 	return 0;
@@ -92,12 +102,13 @@ void lcdinit(void)
 {
 	int fd = open("/dev/mem", O_RDWR);
 
-	gpio = (unsigned int *)mmap(0, getpagesize(),
+	gpio = (UINT *)mmap(0, getpagesize(),
 		PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIOBASE);
 	phdr = &gpio[PHDR];
 	padr = &gpio[PADR];
 	paddr = &gpio[PADDR];
 	phddr = &gpio[PHDDR];
+//	printf("1:  %4x %4x \n", gpio[PADR],gpio[PADDR]);
 	*paddr = 0x0;								  // All of port A to inputs
 	*phddr |= 0x38;								  // bits 3:5 of port H to outputs
 	*phdr &= ~0x18;								  // de-assert EN, de-assert RS
@@ -117,10 +128,10 @@ void lcdinit(void)
 }
 
 
-unsigned int lcdwait(void)
+UINT lcdwait(void)
 {
 	int i, dat, tries = 0;
-	unsigned int ctrl = *phdr;
+	UINT ctrl = *phdr;
 
 	*paddr = 0x0;								  // set port A to inputs
 	ctrl = *phdr;
@@ -157,10 +168,10 @@ unsigned int lcdwait(void)
 }
 
 
-void command(unsigned int cmd)
+void command(UINT cmd)
 {
 	int i;
-	unsigned int ctrl = *phdr;
+	UINT ctrl = *phdr;
 
 	*paddr = 0xff;								  // set port A to outputs
 
@@ -191,21 +202,28 @@ void command(unsigned int cmd)
 }
 
 
-void writechars(unsigned char *dat)
+void writechars(UCHAR *dat)
 {
 	int i;
-	unsigned int ctrl = *phdr;
+	UINT ctrl = *phdr;
 
 	do
 	{
 		lcdwait();
+//		printf("1a:  %4x %4x \n", gpio[PADR],gpio[PADDR]);
 		*paddr = 0xff;							  // set port A to outputs
+//		printf("2a:  %4x %4x \n", gpio[PADR],gpio[PADDR]);
 
 // step 1, apply RS & WR, send data
+//		printf("3a:  %4x %4x \n", gpio[PADR],gpio[PADDR]);
 		*padr = *dat++;
+//		printf("4a:  %4x %4x \n", gpio[PADR],gpio[PADDR]);
 		ctrl |= 0x10;							  // assert RS
+//		printf("5a:  %4x %4x \n", gpio[PADR],gpio[PADDR]);
 		ctrl &= ~0x20;							  // assert WR
+//		printf("6a:  %4x %4x \n", gpio[PADR],gpio[PADDR]);
 		*phdr = ctrl;
+//		printf("7a:  %4x %4x \n", gpio[PADR],gpio[PADDR]);
 
 // step 2
 		i = SETUP;

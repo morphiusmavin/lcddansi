@@ -1,3 +1,4 @@
+<h1>LCDDANSI</h1>
 
 31st Jan 2013
                                                         Version 0.7ANSI
@@ -24,20 +25,15 @@ Initial ANSI code from a patch set from Yan Seiner  <yan@seiner.com>
 While the Software is specific to Technologics TS72x0 ARM SBCs based
 on EP9302 micros, it can be patched to work on other platforms.
 
-see    
-
-  http://www.embeddedx86.com/   
+see http://www.embeddedx86.com/
+(couldn't find this source on the website or the ftp site)
   
 for TS72xx board details.
 
-The latest version of this program can be got from....
+This source code is provided under the terms of the GNU General Public License
+- see the file COPYING for details.
 
- http://www.comp.leeds.ac.uk/jj/linux/lcdd.tgz
-
-It is provided under the terms of the GNU General Public License - see the
-file COPYING for details.
-
-Compiling
+<h2>Compiling</h2>
 ---------
 
 Makefile is setup to use the Technologic Systems provided Cross compilation 
@@ -64,6 +60,7 @@ Sorry.
 
 Jim Jackson
 <jj@franjam.org.uk>
+(dead links?)
 http://www.comp.leeds.ac.uk/jj
 http://www.comp.leeds.ac.uk/jj/linux/arm-sbc.html
 

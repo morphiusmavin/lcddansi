@@ -12,4 +12,5 @@ git add README.md
 git add TODO
 git add ts7200io.c
 git add ts7200io.h
+git add mytypes.h
 git status
