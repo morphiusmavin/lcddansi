@@ -601,21 +601,15 @@ int ifwidth,lines;
 		lcd_ifwidth=8;
 		printf("cmd: %d\n",cmd);
 		lcd_cmd(cmd);							  /* initialise width of interface, font, and lines */
-		printf("hello?\n");
 		/* usleep(10000); */ waitalarm();
 		lcd_ifwidth=ifwidth;
 		lcd_cmd(cmd);							  /* initialise width of interface, font, and lines */
-		printf("hello?\n");
 		/* usleep(10000); */ waitalarm();
 		lcd_cmd(0x0C);							  /* set display on, cursor off, blinking off */
-		printf("hello?\n");
 		/* usleep(10000); */ waitalarm();
 		lcd_cmd(0x01);							  /* clear display */
-		printf("hello?\n");
 		/* usleep(10000); */ waitalarm();
 		lcd_cmd(0x06);							  /* increment mode, entire shift off */
-		printf("hello?\n");
-
 	}
 	return(st);
 }
@@ -630,7 +624,6 @@ unsigned char c;
 	int i;
 
 	lcd_wait();									  /* wait till LCD is NOT busy */
-	printf("done\n");
 	if (lcd_ifwidth==4) { lcd_cmd4(c); return ; }
 	*lcd_io_ddr=0xFF;							  /* set data to outputs */
 	*lcd_io_byte=c;								  /* set data lines to value */

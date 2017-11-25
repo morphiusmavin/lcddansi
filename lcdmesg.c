@@ -8,6 +8,7 @@
 #include "mytypes.h"
 
 #define GPIOBASE    0x80840000
+#define JUMPERS		0x10800000
 #define PADR    0							// address offset of LCD
 #define PADDR   (0x10 / sizeof(UINT))		// address offset of DDR LCD
 #define PHDR    (0x40 / sizeof(UINT))		// bits 3-5: EN, RS, WR
@@ -27,6 +28,7 @@
 );
 
 volatile UINT *gpio;
+volatile UINT *jumper;
 volatile UINT *phdr;
 volatile UINT *phddr;
 volatile UINT *padr;
@@ -45,12 +47,44 @@ void lcdinit(void);
  * It may need to be tweaked for different size displays
  */
 
+int jumper_on;
+
 int main(int argc, char **argv)
 {
 	int i = 0;
+#if 0
+	doesn't work, just shows dbdbdbdbdb...
+	size_t pagesize;
+	UINT jump;
+	
+	int fd = open("/dev/mem", O_RDWR);
 
-	printf("argc: %d\n",argc);
+	jumper = (UINT *)mmap(0, getpagesize(),
+		PROT_READ|PROT_WRITE, MAP_SHARED, fd, JUMPERS);
+	jump = *jumper;
 
+	for(i = 0;i < 100;i++)
+		printf("%2x ",*(jumper + i));
+	printf("\n");
+
+	printf("jumper:%4x %4x %4x\n",jumper,*jumper,jump);
+
+	if((jump & 0x01) == 1)
+	{
+		jumper_on = 1;
+		printf("jumper on: %2x \n",jump);
+	}
+	else
+	{
+		printf("jumper off: %2x \n",jump);
+		jumper_on = 0;
+	}
+	
+//	if(munmap((void *)jumper,pagesize) == -1)
+//		perror("error un-mapping file\n");
+//	close(fd);
+#endif
+	
 	lcdinit();
 
 	if(argc > 3)
@@ -67,7 +101,6 @@ int main(int argc, char **argv)
 		command(0xa8);							  // set DDRAM addr to second row
 		writechars((UCHAR*)argv[2]);
 	}
-	if (argc > 0) return 0;
 
 	while(!feof(stdin))
 	{
@@ -101,7 +134,7 @@ int main(int argc, char **argv)
 void lcdinit(void)
 {
 	int fd = open("/dev/mem", O_RDWR);
-
+	int psize = getpagesize();
 	gpio = (UINT *)mmap(0, getpagesize(),
 		PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIOBASE);
 	phdr = &gpio[PHDR];
@@ -125,6 +158,9 @@ void lcdinit(void)
 	command(0xc);								  // display on, blink off, cursor off
 	lcdwait();
 	command(0x2);								  // return home
+	printf("pagesize: %d\n",psize);
+	printf("%4x %4x \n",gpio,*gpio);
+	printf("%6x %6x \n",gpio,*gpio);
 }
 
 

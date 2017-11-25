@@ -108,6 +108,7 @@ lcdmesg.o: lcdmesg.c
 	${CC} ${CC_FLAGS} -DTEST_SEQUENCE ${INCLUDE_PATHS} -c lcdmesg.c
 
 lcd_msg: lcdmesg.o
+#	${CC} -static lcdmesg.o -o lcd_msg
 	${CC} lcdmesg.o -o lcd_msg
 
 clean :
