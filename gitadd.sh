@@ -13,4 +13,6 @@ git add TODO
 git add ts7200io.c
 git add ts7200io.h
 git add mytypes.h
+git add lcd_func.c
+git add lcd_func2.c
 git status

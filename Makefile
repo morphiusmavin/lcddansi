@@ -90,7 +90,8 @@ LD_SYS_LIBS = $(SYS_LIBRARIES)
 
 #GNUCFLAGS = -g -ansi -Wstrict-prototypes	doesn't compile "// ..comments.."
 #CC_FLAGS = -static -g -Wstrict-prototypes -mcpu=arm920t -mapcs-32 -mthumb-interwork -DMAKE_TARGET
-CC_FLAGS = -g -Wstrict-prototypes -mcpu=arm920t -DMAKE_TARGET
+CC_FLAGS = -Wstrict-prototypes -mcpu=arm920t -DMAKE_TARGET
+CC_FLAGS2 = -Wstrict-prototypes -mcpu=arm920t
 GNULDFLAGS_T = ${GNULDFLAGS} -pthread
 #CC_FLAGST = ${CC_FLAGS} + GNULDFLAGS_T
 GNUSFLAGS = -D_SVID_SOURCE -D_XOPEN_SOURCE
@@ -102,17 +103,31 @@ GNUNOANSI = -g -gnu99 -Wstrict-prototypes
 
 BULD_TARGET = $(PROJECT)
 
-all : lcd_msg
+all : lcd_msg lcd_func lcd_func2
 
 lcdmesg.o: lcdmesg.c
-	${CC} ${CC_FLAGS} -DTEST_SEQUENCE ${INCLUDE_PATHS} -c lcdmesg.c
+	${CC} ${CC_FLAGS} ${INCLUDE_PATHS} -c lcdmesg.c
+
+lcd_func.o: lcd_func.c lcd_func.h
+	${CC} ${CC_FLAGS2} ${INCLUDE_PATHS} -c lcd_func.c
+
+lcd_func2.o: lcd_func2.c lcd_func.h
+	${CC} ${CC_FLAGS2} ${INCLUDE_PATHS} -c lcd_func2.c
 
 lcd_msg: lcdmesg.o
 #	${CC} -static lcdmesg.o -o lcd_msg
 	${CC} lcdmesg.o -o lcd_msg
 
+lcd_func: lcd_func.o
+#	${CC} -static lcdmesg.o -o lcd_msg
+	${CC} lcd_func.o -o lcd_func
+
+lcd_func2: lcd_func2.o
+#	${CC} -static lcdmesg.o -o lcd_msg
+	${CC} lcd_func2.o -o lcd_func2
+
 clean :
-	rm -f *.o *~ *# core lcd_msg
-	
+	rm -f *.o *~ *# core lcd_msg lcd_func
+
 
 

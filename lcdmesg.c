@@ -8,7 +8,7 @@
 #include "mytypes.h"
 
 #define GPIOBASE    0x80840000
-#define JUMPERS		0x10800000
+//#define JUMPERS		0x10800000
 #define PADR    0							// address offset of LCD
 #define PADDR   (0x10 / sizeof(UINT))		// address offset of DDR LCD
 #define PHDR    (0x40 / sizeof(UINT))		// bits 3-5: EN, RS, WR
@@ -47,7 +47,7 @@ void lcdinit(void);
  * It may need to be tweaked for different size displays
  */
 
-int jumper_on;
+//int jumper_on;
 
 int main(int argc, char **argv)
 {
@@ -159,8 +159,8 @@ void lcdinit(void)
 	lcdwait();
 	command(0x2);								  // return home
 	printf("pagesize: %d\n",psize);
-	printf("%4x %4x \n",gpio,*gpio);
-	printf("%6x %6x \n",gpio,*gpio);
+//	printf("%4x %4x \n",gpio,*gpio);
+//	printf("%6x %6x \n",gpio,*gpio);
 }
 
 
