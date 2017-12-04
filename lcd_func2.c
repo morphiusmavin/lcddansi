@@ -102,65 +102,6 @@ void myprintf1(char *str)
 	col++;
 }
 
-/**********************************************************************************************************/
-void myprintf2(char *str, int x)
-{
-	char *ptr = str;
-	char temp[4];
-	int i;
-
-	add_col();
-	lcd_cmd(HOME+col);
-	col += (int)strlen(str);
-	lcd_write((UCHAR *)ptr);
-	temp[0] = 0x20;
-	temp[1] = 0;
-	col += (int)strlen(temp);
-	lcd_write((UCHAR *)temp);
-	sprintf(temp,"%2d",x);
-	col += (int)strlen(temp);
-	ptr = temp;
-	lcd_write((UCHAR *)ptr);
-	temp[0] = 0x20;
-	temp[1] = 0;
-	ptr = temp;
-	lcd_write((UCHAR *)ptr);
-	col += 2;
-}
-
-/**********************************************************************************************************/
-void myprintf3(char *str, int x, int y)
-{
-	char *ptr = str;
-	char temp[4];
-	int i;
-
-	add_col();
-	lcd_cmd(HOME+col);
-	col += (int)strlen(str);
-	lcd_write((UCHAR *)ptr);
-	temp[0] = 0x20;
-	temp[1] = 0;
-	lcd_write((UCHAR *)temp);
-	sprintf(temp,"%2d",x);
-	col += (int)strlen(temp);
-	ptr = temp;
-	lcd_write((UCHAR *)ptr);
-
-	temp[0] = 0x20;
-	temp[1] = 0;
-	col += (int)strlen(temp);
-	lcd_write((UCHAR *)temp);
-	sprintf(temp,"%2d",y);
-	col += (int)strlen(temp);
-	ptr = temp;
-	lcd_write((UCHAR *)ptr);
-	temp[0] = 0x20;
-	temp[1] = 0;
-	ptr = temp;
-	lcd_write((UCHAR *)ptr);
-	col += 2;
-}
 
 /**********************************************************************************************************/
 void shift_left(void)
@@ -175,11 +116,32 @@ void shift_right(void)
 }
 
 /**********************************************************************************************************/
+#if 0
+static void wdtctlinit(void)
+{
+	int fd = open("/dev/mem", O_RDWR);
+	printf("wdtctl: %d\n",fd);
+	int psize = getpagesize();
+
+	wdtctl = (UINT *)mmap(0, getpagesize(),PROT_READ|PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, WDTCTLREG);
+}
+
+/**********************************************************************************************************/
+static void wdtfeedinit(void)
+{
+	int fd = open("/dev/mem", O_RDWR);
+	printf("wdtf: %d\n",fd);
+	int psize = getpagesize();
+
+	wdtfeed = (UINT *)mmap(0, getpagesize(),PROT_READ|PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, WDTFEEDREG);
+}
+#endif
+/**********************************************************************************************************/
 static void lcdinit(void)
 {
 	int fd = open("/dev/mem", O_RDWR);
 	int psize = getpagesize();
-
+	printf("lcd: %d\n",fd);
 // if compiling with -static we have to use the MAP_FIXED flag
 //	gpio = (UINT *)mmap(0, getpagesize(),PROT_READ|PROT_WRITE, MAP_SHARED, fd, LCDBASEADD);
 	gpio = (UINT *)mmap(0, getpagesize(),PROT_READ|PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, LCDBASEADD);
@@ -367,6 +329,7 @@ void print_mem(void)
 
 
 */
+#if 0
 	printf("phdr:     %4x %4x\n",phdr,*phdr);			// 40
 	printf("padr:     %4x %4x\n",padr,*padr);			// 0
 	printf("paddr:    %4x %4x\n",paddr,*paddr);			// 10
@@ -375,6 +338,8 @@ void print_mem(void)
 	printf("dio_ddr:  %4x %4x\n",dio_ddr,*dio_ddr);		// 14
 	printf("portfb:   %4x %4x\n",portfb,*portfb);		// 30
 	printf("portfd:   %4x %4x\n",portfd,*portfd);		// 34
+#endif
+	printf("wdtctl:   %4x\n",*wdtctl);
 }
 
 int setbiobit(UCHAR *ptr,int n,int v)
@@ -510,35 +475,35 @@ int main(void)
 	print_menu();
 
 	lcd_init();
+//	mydelay(2);
+//	wdtctlinit();
+//	mydelay(2);
+//	wdtfeedinit();
+//	mydelay(2);
 
 	for(i = 0;i < 6;i++)	
 		setdioddr(i,0);
-
 	do
 	{
 		key = getc(stdin);
 		switch(key)
 		{
 			case 'c':
-//				lcd_cls();			
+				lcd_cls();			
 			break;
 			case 'l':
-#if 0
 				for(i = 0;i < 6;i++)
 				{
 					mydelay(5);
 					shift_left();
 				}
-#endif
 			break;
 			case 'r':
-#if 0
 				for(i = 0;i < 6;i++)
 				{
 					mydelay(5);
 					shift_right();
 				}
-#endif
 			break;
 			case 'm':
 				print_menu();
@@ -552,11 +517,11 @@ int main(void)
 				}while(buf[buf_ptr] != 0);
 
 				buf_ptr++;
-//				myprintf1(buf+buf_ptr);
+				myprintf1(buf+buf_ptr);
 				printf("%s\n",buf+buf_ptr);
 			break;
 			case 'h':
-//				lcd_home();
+				lcd_home();
 			break;
 			case 's':
 				print_mem();
@@ -566,6 +531,13 @@ int main(void)
 					printf("%d ",getdioline(i));
 				printf("\n");	
 			break;	
+			case 'f':
+//				*wdtfeed = 0x05;
+			break;
+			case 'w':
+//				*wdtfeed = 0x05;
+//				*wdtctl = 0x07;
+			break;
 			default:
 			break;				
 		}		
@@ -573,16 +545,17 @@ int main(void)
 }
 void print_menu(void)
 {
-/*
+
 	printf("c - clear screen\n");
 	printf("l - shift left\n");
 	printf("r - shift right\n");
 	printf("h - cursor home\n");
-*/
 	printf("p - print buffer\n");
 	printf("m - menu\n");
 	printf("s - show registers\n");
 	printf("t - read inputs\n");
+	printf("w - init WDT\n");
+	printf("f - feed WDT\n");
 }
 
 
